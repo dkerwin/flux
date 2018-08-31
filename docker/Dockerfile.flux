@@ -1,6 +1,7 @@
 FROM alpine:3.6
 
-WORKDIR /home/flux
+# Create unprivileged useraccount to run flux
+RUN adduser -u 1000 -s /sbin/nologin -D flux
 
 RUN apk add --no-cache openssh ca-certificates tini 'git>=2.3.0'
 
@@ -9,7 +10,7 @@ RUN apk add --no-cache openssh ca-certificates tini 'git>=2.3.0'
 RUN ssh-keyscan github.com gitlab.com bitbucket.org >> /etc/ssh/ssh_known_hosts
 
 # Verify newly added known_hosts (man-in-middle mitigation)
-ADD ./verify_known_hosts.sh /home/flux/verify_known_hosts.sh
+COPY ./verify_known_hosts.sh /home/flux/verify_known_hosts.sh
 RUN sh /home/flux/verify_known_hosts.sh /etc/ssh/ssh_known_hosts && rm /home/flux/verify_known_hosts.sh
 
 # Add default SSH config, which points at the private key we'll mount
@@ -37,8 +38,11 @@ ENTRYPOINT [ "/sbin/tini", "--", "fluxd" ]
 COPY --from=quay.io/squaremo/kubeyaml:0.4.2 /usr/lib/kubeyaml /usr/lib/kubeyaml/
 ENV PATH=/bin:/usr/bin:/usr/local/bin:/usr/lib/kubeyaml
 
-COPY ./kubeconfig /root/.kube/config
 COPY ./fluxd /usr/local/bin/
+
+USER flux
+
+COPY ./kubeconfig /home/flux/.kube/config
 
 ARG BUILD_DATE
 ARG VCS_REF

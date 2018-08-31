@@ -16,6 +16,9 @@ spec:
         name: flux-helm-operator
     spec:
       serviceAccount: flux
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
       volumes:
       # The following volume is for using a customised known_hosts
       # file file, which you will need to do if you host your own git
@@ -40,7 +43,7 @@ spec:
         # Include this if you need to mount a customised known_hosts
         # file; you'll also need the volume declared above.
         # - name: sshdir
-        # mountPath: /root/.ssh/known_hosts
+        # mountPath: /home/flux/.ssh/known_hosts
         # subPath: known_hosts
         # readOnly: true
         - name: git-key
